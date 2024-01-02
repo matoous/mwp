@@ -1,0 +1,39 @@
+[package]
+name = "mwp"
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
+categories.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[workspace]
+resolver = "2"
+members = [
+  "mwp-core",
+  "mwp-web",
+  "mwp-scraper",
+]
+
+[workspace.package]
+name = "mwp"
+version = "0.1.0"
+edition = "2021"
+authors = ["Matouš Dzivjak <matousdzivjak@gmail.com>"]
+categories = ["wiki", "knowledge-bage"]
+repository = "https://github.com/matoous/mwp"
+homepage = "https://github.com/matoous/mwp"
+rust-version = "1.70"
+
+[dependencies]
+pulldown-cmark = "0.9.3"
+tantivy = { version = "0.21.1", features = ["mmap"] }
+tokio = { version = "1.35.1", features= ["full"]}
+walkdir = "2.4.0"
+lazy_static = "1.4.0"
+time = "0.3.31"
+url = { version = "2.5.0", features = ["serde"] }
+sled = "0.34.7"
+serde = "1.0.194"
+serde_json = "1.0.111"
+mwp-scraper = { path="./mwp-scraper" }
