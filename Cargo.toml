@@ -1,0 +1,23 @@
+[package]
+name = "mwp"
+version = "0.1.0"
+edition = "2021"
+authors = ["Matouš Dzivjak <matousdzivjak@gmail.com>"]
+categories = ["wiki", "knowledge-bage"]
+repository = "https://github.com/matoous/mwp"
+homepage = "https://github.com/matoous/mwp"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+pulldown-cmark = "0.9.3"
+reqwest = "0.11.23"
+rusqlite = { version = "0.30.0", features = ["bundled", "time", "url"] }
+tantivy = { version = "0.21.1", features = ["mmap"] }
+tokio = { version = "1.35.1", features= ["full"]}
+walkdir = "2.4.0"
+lol_html = "1.2.0"
+lazy_static = "1.4.0"
+regex = "1.10.2"
+html-escape = "0.2.13"
+time = "0.3.31"
