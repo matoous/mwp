@@ -1441,6 +1441,7 @@ name = "mwp"
 version = "0.1.0"
 dependencies = [
  "lazy_static",
+ "mwp-content",
  "mwp-scraper",
  "pulldown-cmark",
  "serde",
@@ -1450,6 +1451,14 @@ dependencies = [
  "time",
  "tokio",
  "url",
+ "walkdir",
+]
+
+[[package]]
+name = "mwp-content"
+version = "0.1.0"
+dependencies = [
+ "pulldown-cmark",
  "walkdir",
 ]
 
@@ -1478,6 +1487,7 @@ dependencies = [
  "env_logger",
  "grass",
  "maud",
+ "mwp-content",
  "serde",
  "serde_json",
  "tantivy",

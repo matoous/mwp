@@ -1,0 +1,11 @@
+[package]
+name = "mwp-content"
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
+categories.workspace = true
+repository.workspace = true
+
+[dependencies]
+pulldown-cmark = "0.9.3"
+walkdir = "2.4.0"

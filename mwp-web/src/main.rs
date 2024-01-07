@@ -1,5 +1,11 @@
+use std::collections::HashMap;
+
 use actix_files::Files;
-use actix_web::{get, web, App, HttpServer, Result as AwResult};
+use actix_web::{
+    get,
+    guard::{Guard, GuardContext},
+    web, App, HttpServer, Result as AwResult,
+};
 use maud::{html, Markup, PreEscaped};
 use serde::Deserialize;
 use tantivy::{
@@ -149,19 +155,78 @@ async fn tag_page(tag: web::Path<String>, index: web::Data<Index>) -> AwResult<M
     })
 }
 
+async fn content_page(
+    path: web::Path<Vec<String>>,
+    content: web::Data<Content>,
+) -> AwResult<Markup> {
+    match content
+        .docs
+        .get(format!("/{}", path.join("/").as_str()).as_str())
+    {
+        Some(mwp_content::Page { html: content, .. }) => Ok(html! {
+            html {
+                (render::header("Content | MWP"))
+                body {
+                    h1 { (path.join(",")) };
+                    main {
+                        article {
+                            (PreEscaped(content))
+                        }
+                    }
+                }
+            }
+        }),
+        None => Ok(html! {
+            html {
+                (render::header("Not found | MWP"))
+                body {
+                    h1 { "Not found" };
+                }
+            }
+        }),
+    }
+}
+
+#[derive(Clone)]
+struct Content {
+    pub docs: HashMap<String, mwp_content::Page>,
+}
+
+struct ContentGuard {
+    pub contents: Vec<String>,
+}
+
+impl Guard for ContentGuard {
+    fn check(&self, req: &GuardContext<'_>) -> bool {
+        self.contents.contains(&req.head().uri.path().to_string())
+    }
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
     let index_path = "../index";
     let index = Index::open_in_dir(index_path).unwrap();
+    let content = Content {
+        docs: mwp_content::read_dir("../../wiki").await,
+    };
 
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(index.clone()))
+            .app_data(web::Data::new(content.clone()))
             .service(index_page)
             .service(tag_page)
             .service(search_page)
+            .route(
+                "/{path:.*}",
+                web::get()
+                    .guard(ContentGuard {
+                        contents: content.docs.keys().cloned().collect(),
+                    })
+                    .to(content_page),
+            )
             .service(Files::new("/", "./static/"))
     })
     .bind(("127.0.0.1", 4444))?
