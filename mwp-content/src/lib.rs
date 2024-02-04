@@ -94,23 +94,24 @@ impl Page {
                 }
 
                 // once we detect "Resources" section of the markdown we ignore the rest of the document
-                if got_resources {
-                    return None;
-                }
-
                 if text.as_ref() == "Resources" {
                     got_resources = true;
                     return Some(event);
                 }
 
-                Some(event)
-            }
-            Event::Start(tag) => {
                 if got_resources {
                     return None;
                 }
 
+                Some(event)
+            }
+            Event::Start(tag) => {
                 open_tags.push(tag);
+
+                if got_resources {
+                    return None;
+                }
+
                 Some(event)
             }
             Event::End(tag) => {
@@ -123,6 +124,7 @@ impl Page {
                                 starred: open_tags.iter().any(|tag| matches!(tag, Tag::Strong)),
                                 tags: tags.clone(),
                             });
+                            link_title.clear();
                         }
                     }
                     Tag::Heading(_, _, _) | Tag::Paragraph | Tag::Item => {
@@ -131,12 +133,7 @@ impl Page {
                     _ => {}
                 }
 
-                // we are in the 'Resources' section with link, stop sending events unless they are close events
-                // for already open tags (e.g. the 'Resources' heading)
-                let last = open_tags.pop();
-                if got_resources && last.is_some() {
-                    return Some(event);
-                }
+                open_tags.pop();
 
                 Some(event)
             }
