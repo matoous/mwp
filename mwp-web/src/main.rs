@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use actix_files::Files;
 use actix_web::{
     get,
@@ -7,11 +5,12 @@ use actix_web::{
     web, App, HttpServer, Result as AwResult,
 };
 use maud::{html, Markup, PreEscaped};
+use mwp_content::Content;
 use serde::Deserialize;
 use tantivy::{
-    query::{AllQuery, QueryParser},
-    schema::Schema,
-    DocAddress, Index, Searcher, SnippetGenerator,
+    query::{AllQuery, QueryParser, TermQuery},
+    schema::{IndexRecordOption, Schema},
+    DocAddress, Index, Searcher, Term,
 };
 
 mod render;
@@ -29,53 +28,16 @@ fn listing(searcher: Searcher, schema: Schema, docs: Vec<(f32, DocAddress)>) -> 
                 @let title = doc.get_first(title).unwrap().as_text().unwrap();
                 @let url = doc.get_first(url).unwrap().as_text().unwrap();
                 @let tags = doc.get_all(tags).map(|i| i.as_text().unwrap()).collect::<Vec<&str>>();
-                div {
-                    div .title {
-                        h3 {
-                            a href=(url) {
-                                (title)
-                            }
-                        }
-                    }
-                    (render::url(url))
-                    (render::tags(tags))
-                }
+                (render::link(title, url, tags))
             }
         }
     }
 }
 
-#[get("/")]
-async fn index_page(index: web::Data<Index>) -> AwResult<Markup> {
-    let schema = index.schema();
-    let reader = index.reader().unwrap();
-    let searcher = reader.searcher();
-
-    let result = search::search(index.into_inner(), &AllQuery).unwrap();
-
-    Ok(html! {
-        html {
-            (render::header("MWP"))
-            body {
-                h1 { "MWP" };
-                form method="GET" action="/search" {
-                    input type="text" name="query" id="query";
-                }
-                (render::layout(
-                    html! {
-                        div { "Sidebar "}
-                        div {(render::tags_filter(result.tags))}
-                    },
-                    listing(searcher, schema, result.docs),
-                ))
-            }
-        }
-    })
-}
-
 #[derive(Debug, Deserialize)]
 pub struct SearchQuery {
     query: String,
+    page: Option<usize>,
 }
 
 #[get("/search")]
@@ -86,39 +48,22 @@ async fn search_page(q: web::Query<SearchQuery>, index: web::Data<Index>) -> AwR
 
     let title = schema.get_field("title").unwrap();
     let body = schema.get_field("body").unwrap();
-    let tags = schema.get_field("tags").unwrap();
     let query_parser = QueryParser::for_index(&index, vec![title, body]);
 
     let query = query_parser.parse_query(q.query.as_str()).unwrap();
-    let result = search::search(index.into_inner(), &*query).unwrap();
-
-    let snippet_generator = SnippetGenerator::create(&searcher, &*query, body).unwrap();
+    let result = search::search(index.into_inner(), &*query, q.page.unwrap_or(0)).unwrap();
 
     Ok(html! {
         html {
-            (render::header("Search | MWP"))
+            (render::header("Search | Matt's Wiki"))
             body {
-                h1 { "Search for " (q.query) };
-                form method="GET" action="/search" {
-                    input type="text" name="query" id="query";
-                }
                 (render::layout(
                     html! {
-                        div { "Sidebar "}
                         div {(render::tags_filter(result.tags))}
                     },
                     html! {
-                        @for (_score, doc_address) in result.docs {
-                            @let doc = searcher.doc(doc_address).unwrap();
-                            @let title = doc.get_first(title).unwrap().as_text().unwrap();
-                            @let snippet = snippet_generator.snippet_from_doc(&doc);
-                            @let tags = doc.get_all(tags).map(|i| i.as_text().unwrap()).collect::<Vec<&str>>();
-                            div {
-                                div { (title) }
-                                div { (PreEscaped(snippet.to_html())) }
-                                (render::tags(tags))
-                            }
-                        }
+                        div {(format!("{:.2?}", result.timing))}
+                        (listing(searcher, schema, result.docs))
                     }
                 ))
             }
@@ -136,18 +81,16 @@ async fn tag_page(tag: web::Path<String>, index: web::Data<Index>) -> AwResult<M
     let query_parser = QueryParser::for_index(&index, vec![tags]);
     let query = query_parser.parse_query(tag.as_str()).unwrap();
 
-    let result = search::search(index.into_inner(), &*query).unwrap();
+    let result = search::search(index.into_inner(), &*query, 0).unwrap();
 
     Ok(html! {
         html {
-            (render::header("Tags | MWP"))
+            (render::header("Tags | Matt's Wiki"))
             body {
-                h1 { (tag) };
                 (render::layout(
                     html! {
-                        div { "Sidebar "}
                         div {(render::tags_filter(result.tags))}
-                    },
+                   },
                     listing(searcher, schema, result.docs)
                 ))
             }
@@ -156,40 +99,76 @@ async fn tag_page(tag: web::Path<String>, index: web::Data<Index>) -> AwResult<M
 }
 
 async fn content_page(
-    path: web::Path<Vec<String>>,
+    path: web::Path<String>,
     content: web::Data<Content>,
+    index: web::Data<Index>,
 ) -> AwResult<Markup> {
-    match content
-        .docs
-        .get(format!("/{}", path.join("/").as_str()).as_str())
-    {
-        Some(mwp_content::Page { html: content, .. }) => Ok(html! {
-            html {
-                (render::header("Content | MWP"))
-                body {
-                    h1 { (path.join(",")) };
-                    main {
-                        article {
-                            (PreEscaped(content))
+    let mwp_content::Page {
+        title,
+        html,
+        tags,
+        parents,
+        ..
+    } = content.get(format!("/{}", path.as_str()).as_str()).unwrap();
+
+    let schema = index.schema();
+    let reader = index.reader().unwrap();
+    let searcher = reader.searcher();
+
+    let tags_field = schema.get_field("tags").unwrap();
+
+    let result = match tags.last() {
+        Some(tag) => {
+            let query = TermQuery::new(
+                Term::from_field_text(tags_field, tag),
+                IndexRecordOption::Basic,
+            );
+            search::search(index.into_inner(), &query, 0).unwrap()
+        }
+        None => search::search(index.into_inner(), &AllQuery, 0).unwrap(),
+    };
+
+    let mut hiearchy: Vec<(String, &String)> = Vec::with_capacity(parents.len());
+    for parent in parents {
+        if parent == "/" {
+            hiearchy.push(("Wiki".into(), parent));
+        } else {
+            hiearchy.push((content.get(parent).unwrap().title.clone(), parent));
+        }
+    }
+
+    Ok(html! {
+        html {
+            (render::header(format!("{} | Matt's Wiki", title).as_str()))
+            body {
+                (render::layout(
+                    html! {
+                        (render::content_navigation(content.build_tree()))
+                    },
+                    html! {
+                        ol .hiearchy {
+                            @for (name, link) in hiearchy {
+                                li {
+                                    @if link != "/" {
+                                        span .separator {
+                                            "/"
+                                        }
+                                    }
+                                    a href=(link) {
+                                        (name)
+                                    }
+                                }
+                            }
+                        }
+                        article { (PreEscaped(html)) }
+                        .links {
+                            (listing(searcher, schema, result.docs))
                         }
                     }
-                }
+                ))
             }
-        }),
-        None => Ok(html! {
-            html {
-                (render::header("Not found | MWP"))
-                body {
-                    h1 { "Not found" };
-                }
-            }
-        }),
-    }
-}
-
-#[derive(Clone)]
-struct Content {
-    pub docs: HashMap<String, mwp_content::Page>,
+        }
+    })
 }
 
 struct ContentGuard {
@@ -206,28 +185,25 @@ impl Guard for ContentGuard {
 async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
-    let index_path = "../index";
+    let index_path = "./index";
     let index = Index::open_in_dir(index_path).unwrap();
-    let content = Content {
-        docs: mwp_content::read_dir("../../wiki").await,
-    };
+    let content = Content::from_dir("../wiki").await;
 
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(index.clone()))
             .app_data(web::Data::new(content.clone()))
-            .service(index_page)
             .service(tag_page)
             .service(search_page)
             .route(
                 "/{path:.*}",
                 web::get()
                     .guard(ContentGuard {
-                        contents: content.docs.keys().cloned().collect(),
+                        contents: content.keys(),
                     })
                     .to(content_page),
             )
-            .service(Files::new("/", "./static/"))
+            .service(Files::new("/", "./mwp-web/static/"))
     })
     .bind(("127.0.0.1", 4444))?
     .run()

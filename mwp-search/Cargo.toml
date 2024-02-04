@@ -1,0 +1,12 @@
+[package]
+name = "mwp-search"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tantivy = { version = "0.21.1", features = ["mmap"] }
+mwp-content = { path="../mwp-content" }
+time = "0.3.34"
+url = "2.5.0"

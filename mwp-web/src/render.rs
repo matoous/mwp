@@ -10,7 +10,7 @@ pub fn header(page_title: &str) -> Markup {
     }
 }
 
-pub fn tags(v: Vec<&str>) -> Markup {
+fn tags_list(v: Vec<&str>) -> Markup {
     html! {
         div .tags {
             @for tag in v {
@@ -22,19 +22,17 @@ pub fn tags(v: Vec<&str>) -> Markup {
     }
 }
 
-pub fn url(url: &str) -> Markup {
-    html! {
-        div .url {
-            a href=(url) {
-                (url)
-            }
-        }
-    }
-}
-
 pub fn layout(sidebar: Markup, content: Markup) -> Markup {
     html! {
         .layout {
+            a .logo href="/" {
+                "Matt's Wiki_"
+            }
+            .search {
+                form method="GET" action="/search" {
+                    input type="text" name="query" id="query" placeholder="Search...";
+                }
+            }
             .sidebar {(sidebar)}
             main .content {(content)}
         }
@@ -61,5 +59,55 @@ pub fn tags_filter(agg: Option<Vec<BucketEntry>>) -> Markup {
             }
         }
         None => html! {},
+    }
+}
+
+fn tree_node(n: mwp_content::Node) -> Markup {
+    html! {
+        .entry {
+            a href=(n.path) {
+                (n.name)
+            }
+            @if !n.children.is_empty() {
+                .folder {
+                    @for child in n.children {
+                        (tree_node(child))
+                    }
+                }
+            }
+        }
+    }
+}
+
+pub fn content_navigation(children: Vec<mwp_content::Node>) -> Markup {
+    html! {
+        .tree {
+            @for child in children {
+                (tree_node(child))
+            }
+        }
+    }
+}
+
+pub fn link(title: &str, url: &str, tags: Vec<&str>) -> Markup {
+    html! {
+        div {
+            div .title {
+                h3 {
+                    @if !url.starts_with('/') {
+                        "↗ "
+                    }
+                    a href=(url) {
+                        (title)
+                    }
+                }
+            }
+            div .url {
+                a href=(url) {
+                    (url)
+                }
+            }
+            (tags_list(tags))
+        }
     }
 }

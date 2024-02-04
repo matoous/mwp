@@ -10,10 +10,10 @@ rust-version.workspace = true
 [workspace]
 resolver = "2"
 members = [
-  "mwp-core",
   "mwp-web",
   "mwp-scraper",
   "mwp-content",
+  "mwp-search",
 ]
 
 [workspace.package]
@@ -39,3 +39,5 @@ serde = "1.0.195"
 serde_json = "1.0.113"
 mwp-scraper = { path="./mwp-scraper" }
 mwp-content = { path="./mwp-content" }
+mwp-search = { path="./mwp-search" }
+rusqlite = { version = "0.30.0", features = ["time", "url"]}
