@@ -8,7 +8,7 @@ repository.workspace = true
 
 [dependencies]
 actix-files = "0.6.5"
-actix-web = "4.4.1"
+actix-web = "4.5.1"
 env_logger = "0.10.2"
 maud = { version = "0.26.0", features = ["actix-web"] }
 serde = "1.0.195"
