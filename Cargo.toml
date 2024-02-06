@@ -35,7 +35,7 @@ lazy_static = "1.4.0"
 time = "0.3.31"
 url = { version = "2.5.0", features = ["serde"] }
 sled = "0.34.7"
-serde = "1.0.195"
+serde = "1.0.196"
 serde_json = "1.0.113"
 mwp-scraper = { path="./mwp-scraper" }
 mwp-content = { path="./mwp-content" }
