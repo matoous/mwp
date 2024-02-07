@@ -18,4 +18,4 @@ tantivy = "0.21.1"
 mwp-content = { path="../mwp-content" }
 
 [build-dependencies]
-grass = "0.13.1"
+grass = "0.13.2"
