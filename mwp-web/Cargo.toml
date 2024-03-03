@@ -6,6 +6,10 @@ edition.workspace = true
 categories.workspace = true
 repository.workspace = true
 
+[[bin]]
+name = "mwp"
+path = "src/main.rs"
+
 [dependencies]
 actix-files = "0.6.5"
 actix-web = "4.5.1"
@@ -14,8 +18,10 @@ maud = { version = "0.26.0", features = ["actix-web"] }
 serde = "1.0.196"
 serde_json = "1.0.113"
 tantivy = "0.21.1"
+rusqlite = { version = "0.30.0", features = ["time", "url"]}
 
 mwp-content = { path="../mwp-content" }
+mwp-search = { path="../mwp-search" }
 
 [build-dependencies]
 grass = "0.13.2"

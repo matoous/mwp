@@ -1,23 +1,24 @@
-FROM rust:1.70 as builder
+FROM rust:1.70-slim-bookworm as builder
+
+RUN apt update \
+  && apt install -y libssl-dev pkg-config
+RUN rustup update
 
 # deps
 WORKDIR /app
-RUN USER=root cargo init
-COPY Cargo.toml Cargo.lock ./
-RUN cargo build --release
 
-# app
-ADD . ./
-RUN rm ./target/release/deps/mwp*
-RUN cargo build --release
+COPY . ./
+RUN cargo build --release --bin mwp
 
 # runtime
-FROM debian:buster-slim
+FROM debian:bookworm-slim
 WORKDIR /app
 ARG VERSION
 
 RUN apt update \
     && apt install -y \
+      pkg-config \
+      libssl-dev \
       ca-certificates \
       tzdata \
     && rm -rf /var/lib/apt/lists/*
@@ -25,6 +26,7 @@ RUN apt update \
 ENV TZ=Etc/UTC
 
 COPY --from=builder /app/target/release/mwp mwp
+COPY db.db3 ./
 
 EXPOSE 4444
 

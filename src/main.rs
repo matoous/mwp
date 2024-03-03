@@ -1,11 +1,11 @@
 use mwp_content::Link;
-use mwp_search::{Doc, SearchIndex};
+use mwp_search::Doc;
 use rusqlite::Connection;
 use time::OffsetDateTime;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let conn = Connection::open("./my_db.db3")?;
+    let conn = Connection::open("./db.db3")?;
     conn.execute(
         r#"
         CREATE TABLE IF NOT EXISTS links (
@@ -21,34 +21,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         (), // empty list of parameters.
     )?;
 
-    let index = SearchIndex::new("./index")?;
-
     let content = mwp_content::Content::from_dir("../wiki").await;
-    index.add_content(content.values())?;
-
-    let mut stmt =
-        conn.prepare("SELECT title, url, domain, body, tags, created_at, scraped_at FROM links")?;
-    let docs_iter = stmt.query_map([], |row| {
-        Ok(Doc {
-            title: row.get(0)?,
-            url: row.get(1)?,
-            domain: row.get(2)?,
-            body: row.get(3)?,
-            tags: row
-                .get::<usize, Option<String>>(4)
-                .map(|res| res.map(|s| s.split(';').map(|s| s.into()).collect::<Vec<String>>()))?,
-            created_at: row.get(5)?,
-            scraped_at: row.get(6)?,
-        })
-    })?;
-
-    let mut builder = index.builder();
-    for doc in docs_iter {
-        builder.add(doc.unwrap())?;
-    }
-    builder.commit();
-
-    return Ok(());
 
     // only needed before links from content are migrated to bookmarking system
     let links = content

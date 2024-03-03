@@ -73,7 +73,6 @@ impl Page {
         let mut link_title = String::new();
         let mut links: Vec<Link> = Vec::new();
         let mut open_tags: Vec<Tag> = Vec::new();
-        let mut got_resources: bool = false;
 
         #[allow(clippy::unnecessary_filter_map)]
         let parser = Parser::new_ext(&content, options).filter_map(|event| match event.clone() {
@@ -93,25 +92,10 @@ impl Page {
                     link_title = text.to_string();
                 }
 
-                // once we detect "Resources" section of the markdown we ignore the rest of the document
-                if text.as_ref() == "Resources" {
-                    got_resources = true;
-                    return Some(event);
-                }
-
-                if got_resources {
-                    return None;
-                }
-
                 Some(event)
             }
             Event::Start(tag) => {
                 open_tags.push(tag);
-
-                if got_resources {
-                    return None;
-                }
-
                 Some(event)
             }
             Event::End(tag) => {
@@ -137,10 +121,7 @@ impl Page {
 
                 Some(event)
             }
-            event => match got_resources {
-                true => None,
-                false => Some(event),
-            },
+            event => Some(event),
         });
 
         let mut html_output = String::new();

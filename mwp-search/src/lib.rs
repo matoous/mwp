@@ -32,25 +32,21 @@ impl Doc {
 }
 
 impl SearchIndex {
-    pub fn new(dir: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        let index = if let Ok(index) = Index::open_in_dir(dir) {
-            index
-        } else {
-            let mut schema_builder = Schema::builder();
-            schema_builder.add_text_field("url", STRING | STORED);
-            schema_builder.add_text_field("title", TEXT | STORED);
-            schema_builder.add_text_field("body", TEXT);
-            schema_builder.add_text_field("domain", STRING | STORED);
-            schema_builder.add_text_field("tags", STRING | STORED | FAST);
-            let schema = schema_builder.build();
-            Index::builder()
-                .schema(schema)
-                .settings(tantivy::IndexSettings {
-                    docstore_blocksize: 32_000_000,
-                    ..tantivy::IndexSettings::default()
-                })
-                .create_in_dir(dir)?
-        };
+    pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
+        let mut schema_builder = Schema::builder();
+        schema_builder.add_text_field("url", STRING | STORED);
+        schema_builder.add_text_field("title", TEXT | STORED);
+        schema_builder.add_text_field("body", TEXT);
+        schema_builder.add_text_field("domain", STRING | STORED);
+        schema_builder.add_text_field("tags", STRING | STORED | FAST);
+        let schema = schema_builder.build();
+        let index = Index::builder()
+            .schema(schema)
+            .settings(tantivy::IndexSettings {
+                docstore_blocksize: 32_000_000,
+                ..tantivy::IndexSettings::default()
+            })
+            .create_in_ram()?;
 
         Ok(SearchIndex { index })
     }

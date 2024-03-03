@@ -6,6 +6,8 @@ use actix_web::{
 };
 use maud::{html, Markup, PreEscaped};
 use mwp_content::Content;
+use mwp_search::{Doc, SearchIndex};
+use rusqlite::Connection;
 use serde::Deserialize;
 use tantivy::{
     query::{AllQuery, QueryParser, TermQuery},
@@ -161,9 +163,6 @@ async fn content_page(
                             }
                         }
                         article { (PreEscaped(html)) }
-                        .links {
-                            (listing(searcher, schema, result.docs))
-                        }
                     }
                 ))
             }
@@ -185,13 +184,38 @@ impl Guard for ContentGuard {
 async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
-    let index_path = "./index";
-    let index = Index::open_in_dir(index_path).unwrap();
+    let index = SearchIndex::new().unwrap();
+
+    let conn = Connection::open("./db.db3").unwrap();
+    let mut stmt = conn
+        .prepare("SELECT title, url, domain, body, tags, created_at, scraped_at FROM links")
+        .unwrap();
+    let docs_iter = stmt
+        .query_map([], |row| {
+            Ok(Doc {
+                title: row.get(0)?,
+                url: row.get(1)?,
+                domain: row.get(2)?,
+                body: row.get(3)?,
+                tags: row.get::<usize, Option<String>>(4).map(|res| {
+                    res.map(|s| s.split(';').map(|s| s.into()).collect::<Vec<String>>())
+                })?,
+                created_at: row.get(5)?,
+                scraped_at: row.get(6)?,
+            })
+        })
+        .unwrap();
+
+    let mut builder = index.builder();
+    for doc in docs_iter {
+        builder.add(doc.unwrap()).unwrap();
+    }
+    builder.commit();
     let content = Content::from_dir("../wiki").await;
 
     HttpServer::new(move || {
         App::new()
-            .app_data(web::Data::new(index.clone()))
+            .app_data(web::Data::new(index.index.clone()))
             .app_data(web::Data::new(content.clone()))
             .service(tag_page)
             .service(search_page)
