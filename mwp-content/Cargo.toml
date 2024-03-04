@@ -9,4 +9,4 @@ repository.workspace = true
 [dependencies]
 pulldown-cmark = "0.9.3"
 url = "2.5.0"
-walkdir = "2.4.0"
+walkdir = "2.5.0"
