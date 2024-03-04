@@ -2,6 +2,22 @@ use mwp_content::Link;
 use mwp_search::Doc;
 use rusqlite::Connection;
 use time::OffsetDateTime;
+use url::Url;
+
+mod parser;
+
+use crate::parser::{DomParser, DomParserResult};
+
+pub async fn scrape(link: &Url) -> Result<DomParserResult, Box<dyn std::error::Error>> {
+    let response = reqwest::get(link.clone()).await?;
+
+    let html_text = response.text().await?;
+
+    let mut rewriter = DomParser::new();
+    rewriter.write(html_text.as_bytes())?;
+
+    Ok(rewriter.wrap())
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -92,9 +108,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             },
         };
 
-        println!("scraping {}", link.url);
-
-        let data = mwp_scraper::scrape(&link.url).await;
+        let data = scrape(&link.url).await;
         let data = match data {
             Ok(data) => data,
             Err(err) => {

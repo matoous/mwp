@@ -4,6 +4,7 @@ use actix_web::{
     guard::{Guard, GuardContext},
     web, App, HttpServer, Result as AwResult,
 };
+use clap::{command, Parser};
 use maud::{html, Markup, PreEscaped};
 use mwp_content::Content;
 use mwp_search::{Doc, SearchIndex};
@@ -180,13 +181,31 @@ impl Guard for ContentGuard {
     }
 }
 
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    /// Source of the wikipedia
+    #[arg(short, long, default_value = "./wiki")]
+    src: String,
+
+    /// The database file
+    #[arg(short, long, default_value = "./db.db3")]
+    db: String,
+
+    /// Address to serve on
+    #[arg(long, default_value = "127.0.0.1:4444")]
+    adr: String,
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
+    let args = Args::parse();
+
     let index = SearchIndex::new().unwrap();
 
-    let conn = Connection::open("./db.db3").unwrap();
+    let conn = Connection::open(args.db).unwrap();
     let mut stmt = conn
         .prepare("SELECT title, url, domain, body, tags, created_at, scraped_at FROM links")
         .unwrap();
@@ -211,7 +230,8 @@ async fn main() -> std::io::Result<()> {
         builder.add(doc.unwrap()).unwrap();
     }
     builder.commit();
-    let content = Content::from_dir("../wiki").await;
+
+    let content = Content::from_dir(&args.src).await;
 
     HttpServer::new(move || {
         App::new()
@@ -229,7 +249,7 @@ async fn main() -> std::io::Result<()> {
             )
             .service(Files::new("/", "./mwp-web/static/"))
     })
-    .bind(("127.0.0.1", 4444))?
+    .bind(&args.adr)?
     .run()
     .await
 }

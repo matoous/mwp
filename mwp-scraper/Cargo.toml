@@ -10,6 +10,18 @@ repository.workspace = true
 html-escape = "0.2.13"
 lazy_static = "1.4.0"
 lol_html = "1.2.0"
+pulldown-cmark = "0.9.3"
 regex = "1.10.3"
 reqwest = "0.11.24"
-url = "2.5.0"
+serde = "1.0.196"
+serde_json = "1.0.113"
+sled = "0.34.7"
+tantivy = { version = "0.21.1", features = ["mmap"] }
+time = "0.3.31"
+tokio = { version = "1.36.0", features= ["full"]}
+url = { version = "2.5.0", features = ["serde"] }
+walkdir = "2.4.0"
+rusqlite = { version = "0.30.0", features = ["time", "url", "bundled"]}
+
+mwp-content = { path="../mwp-content" }
+mwp-search = { path="../mwp-search" }
