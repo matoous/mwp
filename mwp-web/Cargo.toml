@@ -15,7 +15,7 @@ actix-files = "0.6.5"
 actix-web = "4.5.1"
 env_logger = "0.10.2"
 maud = { version = "0.26.0", features = ["actix-web"] }
-serde = "1.0.196"
+serde = "1.0.197"
 serde_json = "1.0.113"
 tantivy = "0.21.1"
 rusqlite = { version = "0.30.0", features = ["time", "url", "bundled"]}
