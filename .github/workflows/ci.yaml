@@ -84,6 +84,7 @@ jobs:
       contents: read
       packages: write
     needs: [check, test, lint]
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
