@@ -25,12 +25,14 @@ fn tags_list(v: Vec<&str>) -> Markup {
 pub fn layout(sidebar: Markup, content: Markup) -> Markup {
     html! {
         .layout {
-            a .logo href="/" {
-                "Matt's Wiki_"
-            }
-            .search {
-                form method="GET" action="/search" {
-                    input type="text" name="query" id="query" placeholder="Search...";
+            .nav {
+                a .logo href="/" {
+                    "Matt's Wiki_"
+                }
+                .search {
+                    form method="GET" action="/search" {
+                        input type="text" name="query" id="query" placeholder="Search...";
+                    }
                 }
             }
             .sidebar {(sidebar)}

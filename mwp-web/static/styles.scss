@@ -120,9 +120,26 @@ ol {
 
 .layout {
   padding: var(--spacings-giga);
+  gap: var(--spacings-giga);
   display: grid;
-  grid-template: 1fr auto;
-  gap: var(--spacings-peta);
+  grid-template-columns: minmax(10em, 1fr) minmax(20em, 860px) 1fr;
+  grid-template-areas:
+    'nav nav nav'
+    'sidebar content .';
+}
+
+.nav {
+  grid-area: nav;
+  display: flex;
+  flex-direction: row;
+}
+
+.sidebar {
+  grid-area: sidebar;
+}
+
+.content {
+  grid-area: content;
 }
 
 .tags {
@@ -140,21 +157,6 @@ ol {
 .listing .url a {
   color: var(--light);
   text-decoration: none;
-}
-
-.layout {
-  display: grid;
-  grid-auto-columns: 200px 1fr;
-  gap: var(--spacings-giga);
-
-  .content {
-    grid-column: 2;
-    width: 100%;
-  }
-
-  .sidebar {
-    grid-column: 1;
-  }
 }
 
 .filter {
