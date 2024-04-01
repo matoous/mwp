@@ -66,6 +66,8 @@ async fn search_page(q: web::Query<SearchQuery>, index: web::Data<Index>) -> AwR
                     },
                     html! {
                         div {(format!("{:.2?}", result.timing))}
+                    },
+                    html! {
                         (listing(searcher, schema, result.docs))
                     }
                 ))
@@ -91,10 +93,13 @@ async fn tag_page(tag: web::Path<String>, index: web::Data<Index>) -> AwResult<M
             (render::header("Tags | Matt's Wiki"))
             body {
                 (render::layout(
-                    html! {
+                   html! {
                         div {(render::tags_filter(result.tags))}
                    },
-                    listing(searcher, schema, result.docs)
+                   html! {
+
+                   },
+                   listing(searcher, schema, result.docs)
                 ))
             }
         }
@@ -163,6 +168,8 @@ async fn content_page(
                                 }
                             }
                         }
+                    },
+                    html! {
                         article { (PreEscaped(html)) }
                     }
                 ))

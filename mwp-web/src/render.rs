@@ -22,7 +22,26 @@ fn tags_list(v: Vec<&str>) -> Markup {
     }
 }
 
-pub fn layout(sidebar: Markup, content: Markup) -> Markup {
+fn footer() -> Markup {
+    html! {
+        footer {
+            div {
+                "© Matous Dzivjak, 2024"
+            }
+            div {
+                "Software Engineer @ SumUp"
+            }
+            address {
+                "Berlin, Germany · Litomerice, Czech Republic"
+            }
+            div {
+                "matousdzivjak@gmail.com · GitHub · Keybase · LinkedIn · Instagram"
+            }
+        }
+    }
+}
+
+pub fn layout(sidebar: Markup, meta: Markup, content: Markup) -> Markup {
     html! {
         .layout {
             .nav {
@@ -31,12 +50,14 @@ pub fn layout(sidebar: Markup, content: Markup) -> Markup {
                 }
                 .search {
                     form method="GET" action="/search" {
-                        input type="text" name="query" id="query" placeholder="Search...";
+                        input type="search" name="query" id="query" placeholder="Search..." accesskey="f";
                     }
                 }
             }
             .sidebar {(sidebar)}
-            main .content {(content)}
+            .meta {(meta)}
+            main {(content)}
+            (footer())
         }
     }
 }
@@ -93,15 +114,13 @@ pub fn content_navigation(children: Vec<mwp_content::Node>) -> Markup {
 
 pub fn link(title: &str, url: &str, tags: Vec<&str>) -> Markup {
     html! {
-        div {
+        div .link {
             div .title {
-                h3 {
-                    @if !url.starts_with('/') {
-                        "↗ "
-                    }
-                    a href=(url) {
-                        (title)
-                    }
+                @if !url.starts_with('/') {
+                    "↗ "
+                }
+                a href=(url) {
+                    (title)
                 }
             }
             div .url {

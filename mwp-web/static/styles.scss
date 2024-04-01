@@ -80,13 +80,30 @@ h2,
 h3,
 h4,
 h5 {
-  font-weight: 700;
-  letter-spacing: -0.0425em;
+  font-weight: 400;
+  font-family: var(--font-serif);
+  letter-spacing: -.05em;
+  margin: 0.25em 0 0.25em 0;
+  line-height: 1.375;
+  padding-top: 0.5em;
+  overflow: hidden;
 }
 
 h1 {
-  font-size: 2.4em;
-  font-weight: 800;
+  font-size: 1.8em;
+  border-bottom: 1px solid var(--light);
+  padding-bottom: 0.17em;
+}
+
+h2 {
+  font-size: 1.5em;
+  border-bottom: 1px solid var(--light);
+  padding-bottom: 0.17em;
+}
+
+h3,
+h4 {
+  font-weight: bold
 }
 
 hr {
@@ -116,30 +133,62 @@ ol {
   padding-left: 1.2em;
 }
 
+form {
+  margin: 0;
+}
+
 // content
 
 .layout {
-  padding: var(--spacings-giga);
-  gap: var(--spacings-giga);
   display: grid;
-  grid-template-columns: minmax(10em, 1fr) minmax(20em, 860px) 1fr;
+  grid-template-columns: 16em minmax(0, 1fr);
+  grid-template-rows: auto auto 1fr auto;
   grid-template-areas:
-    'nav nav nav'
-    'sidebar content .';
+    'nav nav'
+    'sidebar meta'
+    'sidebar content'
+    'footer footer';
 }
 
 .nav {
   grid-area: nav;
   display: flex;
   flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacings-kilo) var(--spacings-giga);
+  border-bottom: 2px solid var(--light);
 }
 
 .sidebar {
   grid-area: sidebar;
+  padding: var(--spacings-giga);
+  border-right: 2px solid var(--light);
 }
 
-.content {
+.meta {
+  grid-area: meta;
+  padding: var(--spacings-kilo) var(--spacings-giga);
+  border-bottom: 2px solid var(--light);
+}
+
+main {
   grid-area: content;
+  padding: var(--spacings-kilo) var(--spacings-giga);
+}
+
+footer {
+  grid-area: footer;
+  padding: var(--spacings-giga);
+  border-top: 2px solid var(--light);
+  font-size: .875em;
+  color: var(--light);
+}
+
+article {
+  max-width: 920px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .tags {
@@ -193,8 +242,26 @@ ol {
 
 .search {
   input {
-    font-size: 1rem;
-    font-family: var(--font-mono);
+    border-radius: 0;
+    outline: none;
+    border: 1px solid #a2a9b1;
+    box-shadow: inset 0 0 0 1px transparent;
+    box-sizing: border-box;
+    display: block;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: 1.375;
+    margin: 0;
+    min-height: 32px;
+    padding: 4px 8px;
+    transition-duration: .25s;
+    transition-property: background-color, color, border-color, box-shadow;
+    width: 100%;
+  }
+
+  input[type="search"] {
+    -webkit-appearance: none;
+    -moz-appearance: textfield;
   }
 }
 
@@ -203,4 +270,13 @@ ol {
   text-decoration: none;
   font-family: var(--font-mono);
   font-weight: bold;
+}
+
+.link {
+  .title {
+    margin-bottom: var(--spacings-bit);
+    font-weight: bold;
+  }
+
+  margin-bottom: var(--spacings-mega);
 }
