@@ -5,7 +5,7 @@ use actix_web::{
     web, App, HttpServer, Result as AwResult,
 };
 use clap::{command, Parser};
-use maud::{html, Markup, PreEscaped};
+use maud::{html, Markup, PreEscaped, DOCTYPE};
 use mwp_content::Content;
 use mwp_search::{Doc, SearchIndex};
 use rusqlite::Connection;
@@ -57,6 +57,7 @@ async fn search_page(q: web::Query<SearchQuery>, index: web::Data<Index>) -> AwR
     let result = search::search(index.into_inner(), &*query, q.page.unwrap_or(0)).unwrap();
 
     Ok(html! {
+        (DOCTYPE)
         html {
             (render::header("Search | Matt's Wiki"))
             body {
@@ -89,6 +90,7 @@ async fn tag_page(tag: web::Path<String>, index: web::Data<Index>) -> AwResult<M
     let result = search::search(index.into_inner(), &*query, 0).unwrap();
 
     Ok(html! {
+        (DOCTYPE)
         html {
             (render::header("Tags | Matt's Wiki"))
             body {
@@ -146,12 +148,16 @@ async fn content_page(
     }
 
     Ok(html! {
+        (DOCTYPE)
         html {
             (render::header(format!("{} | Matt's Wiki", title).as_str()))
             body {
                 (render::layout(
                     html! {
-                        (render::content_navigation(content.build_tree()))
+                        (render::content_navigation(
+                            content.build_tree(),
+                            hiearchy.iter().map(|(name, _)| name.clone()).collect(),
+                        ))
                     },
                     html! {
                         ol .hiearchy {

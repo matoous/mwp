@@ -1,12 +1,14 @@
-use maud::{html, Markup, DOCTYPE};
+use maud::{html, Markup, PreEscaped};
 use tantivy::aggregation::agg_result::BucketEntry;
+
+const EXPAND_ICON: &str = include_str!("static/expand.svg");
 
 pub fn header(page_title: &str) -> Markup {
     html! {
-        (DOCTYPE)
         meta charset="utf-8";
-        link rel="stylesheet" href="/styles.css";
         title { (page_title) }
+        link rel="stylesheet" href="/styles.css";
+        script type="text/javascript" defer="" src="/script.js"{}
     }
 }
 
@@ -85,16 +87,22 @@ pub fn tags_filter(agg: Option<Vec<BucketEntry>>) -> Markup {
     }
 }
 
-fn tree_node(n: mwp_content::Node) -> Markup {
+fn tree_node(n: mwp_content::Node, hiearchy: &[String]) -> Markup {
+    let expanded = hiearchy.contains(&n.name);
     html! {
         .entry {
-            a href=(n.path) {
+            a .active[expanded] href=(n.path) {
                 (n.name)
             }
             @if !n.children.is_empty() {
-                .folder {
+                button aria-controls=(n.name) aria-expanded=(expanded.to_string()) {
+                    span .icon {
+                        (PreEscaped(EXPAND_ICON))
+                    }
+                }
+                .folder .expanded[expanded] id=(n.name) {
                     @for child in n.children {
-                        (tree_node(child))
+                        (tree_node(child, hiearchy.get(1..).unwrap_or_default()))
                     }
                 }
             }
@@ -102,11 +110,11 @@ fn tree_node(n: mwp_content::Node) -> Markup {
     }
 }
 
-pub fn content_navigation(children: Vec<mwp_content::Node>) -> Markup {
+pub fn content_navigation(children: Vec<mwp_content::Node>, hiearchy: Vec<String>) -> Markup {
     html! {
         .tree {
             @for child in children {
-                (tree_node(child))
+                (tree_node(child, hiearchy.get(1..).unwrap_or_default()))
             }
         }
     }

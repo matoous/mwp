@@ -156,6 +156,7 @@ pub struct Content {
     pages: HashMap<String, Page>,
 }
 
+#[derive(Debug)]
 pub struct Node {
     pub name: String,
     pub path: String,

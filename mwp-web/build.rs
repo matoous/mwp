@@ -10,5 +10,10 @@ fn main() -> Result<(), Box<grass::Error>> {
     // see: https://github.com/rust-lang/cargo/issues/3076
     let mut file = File::create("static/styles.css")?;
     file.write_all(css.as_bytes())?;
+
+    println!("cargo:rerun-if-changed=src/static/script.js");
+    let mut file = File::create("static/script.js")?;
+    file.write_all(include_bytes!("src/static/script.js"))?;
+
     Ok(())
 }
