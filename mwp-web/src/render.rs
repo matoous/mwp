@@ -2,6 +2,7 @@ use maud::{html, Markup, PreEscaped};
 use tantivy::aggregation::agg_result::BucketEntry;
 
 const EXPAND_ICON: &str = include_str!("static/expand.svg");
+const BURGER_ICON: &str = include_str!("static/burger.svg");
 
 pub fn header(page_title: &str) -> Markup {
     html! {
@@ -50,13 +51,18 @@ pub fn layout(sidebar: Markup, meta: Markup, content: Markup) -> Markup {
                 a .logo href="/" {
                     "Matt's Wiki_"
                 }
-                .search {
-                    form method="GET" action="/search" {
-                        input type="search" name="query" id="query" placeholder="Search..." accesskey="f";
+                .options {
+                    .search {
+                        form method="GET" action="/search" {
+                            input type="search" name="query" id="query" placeholder="Search..." accesskey="f";
+                        }
+                    }
+                    button .burger aria-controls="sidebar" aria-expanded="sidebar" {
+                        (PreEscaped(BURGER_ICON))
                     }
                 }
             }
-            .sidebar {(sidebar)}
+            #sidebar {(sidebar)}
             .meta {(meta)}
             main {(content)}
             (footer())

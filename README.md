@@ -11,5 +11,5 @@ MWP is the facade for [matoous/wiki](https://github.com/matoous/wiki) hosted on 
 ### Web
 
 ```sh
-cargo watch -i static/styles.css -x run
+cargo watch -i mwp-web/static/ -x run
 ```

@@ -10,11 +10,7 @@ use mwp_content::Content;
 use mwp_search::{Doc, SearchIndex};
 use rusqlite::Connection;
 use serde::Deserialize;
-use tantivy::{
-    query::{AllQuery, QueryParser, TermQuery},
-    schema::{IndexRecordOption, Schema},
-    DocAddress, Index, Searcher, Term,
-};
+use tantivy::{query::QueryParser, schema::Schema, DocAddress, Index, Searcher};
 
 mod render;
 mod search;
@@ -66,7 +62,11 @@ async fn search_page(q: web::Query<SearchQuery>, index: web::Data<Index>) -> AwR
                         div {(render::tags_filter(result.tags))}
                     },
                     html! {
-                        div {(format!("{:.2?}", result.timing))}
+                        .metadata {
+                            div {"Search: " b{(q.query)}}
+                            div {"·"}
+                            div {(format!("{} results in {:.2?}", result.count, result.timing))}
+                        }
                     },
                     html! {
                         (listing(searcher, schema, result.docs))
@@ -95,48 +95,30 @@ async fn tag_page(tag: web::Path<String>, index: web::Data<Index>) -> AwResult<M
             (render::header("Tags | Matt's Wiki"))
             body {
                 (render::layout(
-                   html! {
+                    html! {
                         div {(render::tags_filter(result.tags))}
-                   },
-                   html! {
-
-                   },
-                   listing(searcher, schema, result.docs)
+                    },
+                    html! {
+                        .metadata {
+                            div {"Tag: " b{(tag)}}
+                            div {"·"}
+                            div {(format!("{} results in {:.2?}", result.count, result.timing))}
+                        }
+                    },
+                    listing(searcher, schema, result.docs)
                 ))
             }
         }
     })
 }
 
-async fn content_page(
-    path: web::Path<String>,
-    content: web::Data<Content>,
-    index: web::Data<Index>,
-) -> AwResult<Markup> {
+async fn content_page(path: web::Path<String>, content: web::Data<Content>) -> AwResult<Markup> {
     let mwp_content::Page {
         title,
         html,
-        tags,
         parents,
         ..
     } = content.get(format!("/{}", path.as_str()).as_str()).unwrap();
-
-    let schema = index.schema();
-    let reader = index.reader().unwrap();
-    let searcher = reader.searcher();
-
-    let tags_field = schema.get_field("tags").unwrap();
-
-    let result = match tags.last() {
-        Some(tag) => {
-            let query = TermQuery::new(
-                Term::from_field_text(tags_field, tag),
-                IndexRecordOption::Basic,
-            );
-            search::search(index.into_inner(), &query, 0).unwrap()
-        }
-        None => search::search(index.into_inner(), &AllQuery, 0).unwrap(),
-    };
 
     let mut hiearchy: Vec<(String, &String)> = Vec::with_capacity(parents.len());
     for parent in parents {
