@@ -242,6 +242,7 @@ async fn main() -> std::io::Result<()> {
                     })
                     .to(content_page),
             )
+            .service(Files::new("/static", format!("{}/static", &args.src)))
             .service(Files::new("/", "./mwp-web/static/"))
     })
     .bind(&args.adr)?
