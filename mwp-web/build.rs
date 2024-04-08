@@ -14,7 +14,7 @@ fn main() -> Result<(), Box<grass::Error>> {
     println!("cargo:rerun-if-changed=src/static/style.scss");
     let css = grass::from_string(
         include_str!("src/static/styles.scss"),
-        &grass::Options::default(),
+        &grass::Options::default().style(grass::OutputStyle::Compressed),
     )?;
     let css_out = static_files.join("styles.css");
     let mut file = File::create(css_out)?;
