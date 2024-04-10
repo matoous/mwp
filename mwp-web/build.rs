@@ -5,6 +5,8 @@ use std::{
     path::Path,
 };
 
+use static_files::resource_dir;
+
 fn main() -> Result<(), Box<grass::Error>> {
     let out_dir = env::var("OUT_DIR").unwrap();
     let static_files = Path::new(&out_dir).join("static");
@@ -24,6 +26,8 @@ fn main() -> Result<(), Box<grass::Error>> {
     let js_out = static_files.join("script.js");
     let mut file = File::create(js_out)?;
     file.write_all(include_bytes!("src/static/script.js"))?;
+
+    resource_dir(static_files).build().unwrap();
 
     Ok(())
 }

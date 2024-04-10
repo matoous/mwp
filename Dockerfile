@@ -28,7 +28,6 @@ ENV TZ=Etc/UTC
 COPY --from=builder /app/target/release/mwp mwp
 COPY ./db.db3 ./
 COPY ./wiki ./wiki
-COPY ./mwp-web/static ./
 
 EXPOSE 4444
 

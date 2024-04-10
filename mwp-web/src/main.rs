@@ -4,6 +4,7 @@ use actix_web::{
     guard::{Guard, GuardContext},
     web, App, HttpServer, Result as AwResult,
 };
+use actix_web_static_files::ResourceFiles;
 use clap::{command, Parser};
 use maud::{html, Markup, PreEscaped, DOCTYPE};
 use mwp_content::Content;
@@ -14,6 +15,8 @@ use tantivy::{query::QueryParser, schema::Schema, DocAddress, Index, Searcher};
 
 mod render;
 mod search;
+
+include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
 fn listing(searcher: Searcher, schema: Schema, docs: Vec<(f32, DocAddress)>) -> Markup {
     let title = schema.get_field("title").unwrap();
@@ -229,6 +232,7 @@ async fn main() -> std::io::Result<()> {
     let content = Content::from_dir(&args.src).await;
 
     HttpServer::new(move || {
+        let generated = generate();
         App::new()
             .app_data(web::Data::new(index.index.clone()))
             .app_data(web::Data::new(content.clone()))
@@ -243,7 +247,7 @@ async fn main() -> std::io::Result<()> {
                     .to(content_page),
             )
             .service(Files::new("/static", format!("{}/static", &args.src)))
-            .service(Files::new("/", concat!(env!("OUT_DIR"), "/static")))
+            .service(ResourceFiles::new("/", generated))
     })
     .bind(&args.adr)?
     .run()
