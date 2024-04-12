@@ -7,6 +7,7 @@ const BURGER_ICON: &str = include_str!("static/burger.svg");
 pub fn header(page_title: &str) -> Markup {
     html! {
         meta charset="utf-8";
+        meta content="width=device-width,minimum-scale=1" name="viewport";
         title { (page_title) }
         link rel="stylesheet" href="/styles.css";
         script type="text/javascript" defer="" src="/script.js"{}
