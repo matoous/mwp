@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tantivy = { version = "0.21.1", features = ["mmap"] }
+tantivy = { version = "0.22.0", features = ["mmap"] }
 mwp-content = { path="../mwp-content" }
 time = "0.3.35"
 url = "2.5.0"
