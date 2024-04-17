@@ -74,7 +74,7 @@ impl SearchIndex {
         let tags = schema.get_field("tags").unwrap();
 
         for page in content {
-            let mut document = Document::default();
+            let mut document = TantivyDocument::default();
             document.add_text(title, &page.title);
             document.add_text(body, &page.text);
             document.add_text(url, &page.path);
@@ -106,7 +106,7 @@ impl SearchIndexBuilder {
         let domain = schema.get_field("domain").unwrap();
         let tags = schema.get_field("tags").unwrap();
 
-        let mut document = Document::default();
+        let mut document = TantivyDocument::default();
         document.add_text(title, &doc.title);
         if let Some(body) = doc.body {
             document.add_text(body_field, &body);

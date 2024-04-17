@@ -11,7 +11,11 @@ use mwp_content::Content;
 use mwp_search::{Doc, SearchIndex};
 use rusqlite::Connection;
 use serde::Deserialize;
-use tantivy::{query::QueryParser, schema::Schema, DocAddress, Index, Searcher};
+use tantivy::{
+    query::QueryParser,
+    schema::{Schema, Value},
+    DocAddress, Index, Searcher, TantivyDocument,
+};
 
 mod render;
 mod search;
@@ -26,10 +30,10 @@ fn listing(searcher: Searcher, schema: Schema, docs: Vec<(f32, DocAddress)>) -> 
     html! {
         div .listing {
             @for (_score, doc_address) in docs {
-                @let doc = searcher.doc(doc_address).unwrap();
-                @let title = doc.get_first(title).unwrap().as_text().unwrap();
-                @let url = doc.get_first(url).unwrap().as_text().unwrap();
-                @let tags = doc.get_all(tags).map(|i| i.as_text().unwrap()).collect::<Vec<&str>>();
+                @let doc: TantivyDocument = searcher.doc(doc_address).unwrap();
+                @let title = doc.get_first(title).unwrap().as_str().unwrap();
+                @let url = doc.get_first(url).unwrap().as_str().unwrap();
+                @let tags = doc.get_all(tags).map(|i| i.as_str().unwrap()).collect::<Vec<&str>>();
                 (render::link(title, url, tags))
             }
         }
