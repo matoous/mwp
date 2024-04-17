@@ -17,7 +17,7 @@ serde = "1.0.197"
 serde_json = "1.0.115"
 sled = "0.34.7"
 tantivy = { version = "0.22.0", features = ["mmap"] }
-time = "0.3.35"
+time = "0.3.36"
 tokio = { version = "1.37.0", features= ["full"]}
 url = { version = "2.5.0", features = ["serde"] }
 walkdir = "2.5.0"
