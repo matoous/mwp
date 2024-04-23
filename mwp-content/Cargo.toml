@@ -7,6 +7,6 @@ categories.workspace = true
 repository.workspace = true
 
 [dependencies]
-pulldown-cmark = "0.9.6"
+pulldown-cmark = "0.10.3"
 url = "2.5.0"
 walkdir = "2.5.0"
