@@ -5,7 +5,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use pulldown_cmark::{html, Event, HeadingLevel, Options, Parser, Tag};
+use pulldown_cmark::{html, Event, HeadingLevel, Options, Parser, Tag, TagEnd};
 use url::Url;
 use walkdir::WalkDir;
 
@@ -78,16 +78,22 @@ impl Page {
         let parser = Parser::new_ext(&content, options).filter_map(|event| match event.clone() {
             Event::Text(text) => {
                 if page_title.is_empty()
-                    && open_tags
-                        .last()
-                        .is_some_and(|tag| matches!(tag, Tag::Heading(HeadingLevel::H1, _, _)))
+                    && open_tags.last().is_some_and(|tag| {
+                        matches!(
+                            tag,
+                            Tag::Heading {
+                                level: HeadingLevel::H1,
+                                ..
+                            }
+                        )
+                    })
                 {
                     page_title = text.to_string();
                 }
 
                 if open_tags
                     .last()
-                    .is_some_and(|tag| matches!(tag, Tag::Link(_, _, _)))
+                    .is_some_and(|tag| matches!(tag, Tag::Link { .. }))
                 {
                     link_title = text.to_string();
                 }
@@ -98,27 +104,23 @@ impl Page {
                 open_tags.push(tag);
                 Some(event)
             }
-            Event::End(tag) => {
-                match tag.clone() {
-                    Tag::Link(_, url, _) => {
-                        if let Ok(url) = Url::parse(&url) {
-                            links.push(Link {
-                                title: link_title.clone(),
-                                url,
-                                starred: open_tags.iter().any(|tag| matches!(tag, Tag::Strong)),
-                                tags: tags.clone(),
-                            });
-                            link_title.clear();
-                        }
-                    }
-                    Tag::Heading(_, _, _) | Tag::Paragraph | Tag::Item => {
-                        writeln!(&mut text_output).expect("write text output");
-                    }
-                    _ => {}
-                }
-
+            Event::End(TagEnd::Heading(..) | TagEnd::Paragraph | TagEnd::Item) => {
+                writeln!(&mut text_output).expect("write text output");
                 open_tags.pop();
-
+                Some(event)
+            }
+            Event::End(TagEnd::Link) => {
+                if let Some(Tag::Link { dest_url, .. }) = open_tags.pop() {
+                    if let Ok(url) = Url::parse(&dest_url) {
+                        links.push(Link {
+                            title: link_title.clone(),
+                            url,
+                            starred: open_tags.iter().any(|tag| matches!(tag, Tag::Strong)),
+                            tags: tags.clone(),
+                        });
+                        link_title.clear();
+                    }
+                }
                 Some(event)
             }
             event => Some(event),
