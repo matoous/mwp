@@ -30,7 +30,10 @@ fn footer() -> Markup {
     html! {
         footer {
             div {
-                "© Matous Dzivjak, 2024"
+                "© Matous Dzivjak, 2024 · "
+                a href="https://dzx.cz" {
+                    "dzx.cz"
+                }
             }
             div {
                 "Software Engineer @ SumUp"
