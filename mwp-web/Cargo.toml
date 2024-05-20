@@ -12,7 +12,7 @@ path = "src/main.rs"
 
 [dependencies]
 actix-files = "0.6.5"
-actix-web = "4.5.1"
+actix-web = "4.6.0"
 env_logger = "0.11.3"
 maud = { version = "0.26.0", features = ["actix-web"] }
 serde = "1.0.202"
