@@ -960,8 +960,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fe9006bed769170c11f845cf00c7c1e9092aeb3f268e007c3e760ac68008070f"
 dependencies = [
  "cfg-if",
+ "js-sys",
  "libc",
  "wasi 0.11.0+wasi-snapshot-preview1",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -978,19 +980,20 @@ checksum = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b"
 
 [[package]]
 name = "grass"
-version = "0.13.2"
+version = "0.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b89786a806d5b192cf4e573f9831c847a455a142d000c922bdfc1e5edad14303"
+checksum = "a46def7216d331efa51a6aa796ef777bfdfe9605378382827a553344b7e5eefc"
 dependencies = [
  "clap",
+ "getrandom 0.2.11",
  "grass_compiler",
 ]
 
 [[package]]
 name = "grass_compiler"
-version = "0.13.2"
+version = "0.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7cf7d155dd7cef20195016d01005033a5521aad307033f0f8e8bf0a02f5f7554"
+checksum = "f39216c1843182f78541276fec96f88406861f16aa19cc9f8add70f8e67b7577"
 dependencies = [
  "codemap",
  "indexmap",

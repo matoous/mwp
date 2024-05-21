@@ -27,5 +27,5 @@ mwp-content = { path="../mwp-content" }
 mwp-search = { path="../mwp-search" }
 
 [build-dependencies]
-grass = "0.13.2"
+grass = "0.13.3"
 static-files = "0.2.1"
