@@ -19,7 +19,7 @@ serde = "1.0.204"
 serde_json = "1.0.120"
 tantivy = "0.22.0"
 rusqlite = { version = "0.31.0", features = ["time", "url", "bundled"]}
-clap = { version = "4.5.10", features = ["derive"]}
+clap = { version = "4.5.11", features = ["derive"]}
 static-files = "0.2.4"
 actix-web-static-files = "4.0.1"
 
