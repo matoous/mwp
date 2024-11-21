@@ -9,7 +9,7 @@ repository.workspace = true
 [dependencies]
 html-escape = "0.2.13"
 lazy_static = "1.5.0"
-lol_html = "1.2.1"
+lol_html = "2.0.0"
 pulldown-cmark = "0.12.2"
 regex = "1.11.1"
 reqwest = "0.12.9"
