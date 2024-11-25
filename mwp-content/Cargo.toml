@@ -8,5 +8,5 @@ repository.workspace = true
 
 [dependencies]
 pulldown-cmark = "0.12.2"
-url = "2.5.2"
+url = "2.5.4"
 walkdir = "2.5.0"
