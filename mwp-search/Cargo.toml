@@ -8,5 +8,5 @@ edition = "2021"
 [dependencies]
 tantivy = { version = "0.22.0", features = ["mmap"] }
 mwp-content = { path="../mwp-content" }
-time = "0.3.36"
+time = "0.3.37"
 url = "2.5.4"
