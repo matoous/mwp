@@ -19,8 +19,7 @@ pub async fn scrape(link: &Url) -> Result<DomParserResult, Box<dyn std::error::E
     Ok(rewriter.wrap())
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+pub async fn scrape_all() -> Result<(), Box<dyn std::error::Error>> {
     let conn = Connection::open("./db.db3")?;
     conn.execute(
         r#"
