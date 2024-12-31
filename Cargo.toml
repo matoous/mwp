@@ -1,3 +1,11 @@
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Matouš Dzivjak <matousdzivjak@gmail.com>"]
+categories = ["wiki", "knowledge-bage"]
+repository = "https://github.com/matoous/mwp"
+homepage = "https://github.com/matoous/mwp"
+
 [workspace]
 resolver = "2"
 members = [
@@ -5,6 +13,7 @@ members = [
   "mwp-scraper",
   "mwp-content",
   "mwp-search",
+  "xtask",
 ]
 
 default-members = [
@@ -14,12 +23,8 @@ default-members = [
 [profile.release]
 lto = "thin"
 
-[workspace.package]
-name = "mwp"
-version = "0.1.0"
-edition = "2021"
-authors = ["Matouš Dzivjak <matousdzivjak@gmail.com>"]
-categories = ["wiki", "knowledge-bage"]
-repository = "https://github.com/matoous/mwp"
-homepage = "https://github.com/matoous/mwp"
-rust-version = "1.70"
+[workspace.dependencies]
+tantivy = { version = "0.22.0", features = ["mmap"] }
+url = { version = "2.5.4", features = ["serde"] }
+time = "0.3.37"
+rusqlite = { version = "0.31.0", features = ["time", "url", "bundled"]}
