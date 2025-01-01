@@ -31,6 +31,6 @@ opt-level = 3
 tantivy = { version = "0.22.0", features = ["mmap"] }
 url = { version = "2.5.4", features = ["serde"] }
 time = "0.3.37"
-rusqlite = { version = "0.31.0", features = ["time", "url", "bundled"]}
+rusqlite = { version = "0.32.1", features = ["time", "url", "bundled"]}
 log = "0.4.22"
 tokio = { version = "1.42.0", features= ["full"]}
