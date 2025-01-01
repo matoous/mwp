@@ -4,7 +4,7 @@ use std::default::Default;
 use std::rc::Rc;
 
 use lazy_static::lazy_static;
-use lol_html::{element, text, HtmlRewriter, Settings};
+use lol_html::{element, text, EndTagHandler, HtmlRewriter, Settings};
 use regex::Regex;
 
 lazy_static! {
@@ -115,17 +115,6 @@ pub struct DomParserResult {
     pub language: String,
 }
 
-// Some shorthand to clean up our use of Rc<RefCell<*>> in the lol_html macros
-// From https://github.com/rust-lang/rfcs/issues/2407#issuecomment-385291238
-macro_rules! enclose {
-    ( ($( $x:ident ),*) $y:expr ) => {
-        {
-            $(let $x = $x.clone();)*
-            $y
-        }
-    };
-}
-
 impl<'a> DomParser<'a> {
     pub fn new() -> Self {
         let data = Rc::new(RefCell::new(DomParserData::default()));
@@ -141,158 +130,188 @@ impl<'a> DomParser<'a> {
         let rewriter = HtmlRewriter::new(
             Settings {
                 element_content_handlers: vec![
-                    enclose! { (data) element!("html", move |el| {
-                        let mut data = data.borrow_mut();
-                        data.has_html_element = true;
-                        if let Some(lang) = el.get_attribute("lang") {
-                            data.language = Some(lang.to_lowercase());
-                        }
-                        Ok(())
-                    })},
-                    enclose! { (data) element!(root, move |el| {
-                        let tag_name = el.tag_name();
-
-                        // Handle adding spaces between words separated by <br/> tags and the like
-                        if SPACE_SELECTORS.contains(&el.tag_name().as_str()) {
-                            let parent = &data.borrow().current_node;
-                            let mut parent = parent.borrow_mut();
-                            parent.current_value.push(' ');
-                        }
-
-                        let node = {
+                    {
+                        let data = data.clone();
+                        element!("html", move |el| {
                             let mut data = data.borrow_mut();
-                            let parent_node = data.current_node.borrow();
-                            let parent_status = parent_node.status;
+                            data.has_html_element = true;
+                            if let Some(lang) = el.get_attribute("lang") {
+                                data.language = Some(lang.to_lowercase());
+                            }
+                            Ok(())
+                        })
+                    },
+                    {
+                        let data = data.clone();
 
-                            let node = Rc::new(RefCell::new(DomParsingNode{
-                                parent: Some(Rc::clone(&data.current_node)),
-                                status: parent_status,
-                                current_value: String::default(),
-                            }));
+                        element!(root, move |el| {
+                            let tag_name = el.tag_name();
 
-                            drop(parent_node);
-                            data.current_node = Rc::clone(&node);
-                            node
-                        };
+                            // Handle adding spaces between words separated by <br/> tags and the like
+                            if SPACE_SELECTORS.contains(&el.tag_name().as_str()) {
+                                let parent = &data.borrow().current_node;
+                                let mut parent = parent.borrow_mut();
+                                parent.current_value.push(' ');
+                            }
 
-                        if let Some(handlers) = el.end_tag_handlers() {
-                            let data = data.clone();
-                            let node = node.clone();
-                            let tag_name = tag_name.clone();
-                            handlers.push(Box::new(move |end| {
+                            let node = {
                                 let mut data = data.borrow_mut();
-                                let mut node = node.borrow_mut();
+                                let parent_node = data.current_node.borrow();
+                                let parent_status = parent_node.status;
 
-                                // When we reach an end tag, we need to
-                                // make sure to move focus back to the parent node.
+                                let node = Rc::new(RefCell::new(DomParsingNode {
+                                    parent: Some(Rc::clone(&data.current_node)),
+                                    status: parent_status,
+                                    current_value: String::default(),
+                                }));
+
+                                drop(parent_node);
+                                data.current_node = Rc::clone(&node);
+                                node
+                            };
+
+                            if let Some(handlers) = el.end_tag_handlers() {
+                                let data = data.clone();
+                                let node = node.clone();
+                                let tag_name = tag_name.clone();
+                                let handler: EndTagHandler = Box::new(move |end| {
+                                    let mut data = data.borrow_mut();
+                                    let mut node = node.borrow_mut();
+
+                                    // When we reach an end tag, we need to
+                                    // make sure to move focus back to the parent node.
+                                    if let Some(parent) = &node.parent {
+                                        data.current_node = Rc::clone(parent);
+                                    }
+
+                                    // Try to capture the first title on the page (if unset)
+                                    if tag_name == "h1"
+                                        && !data.meta.contains_key("auto_title")
+                                        && !node.current_value.trim().is_empty()
+                                    {
+                                        data.meta.insert(
+                                            "auto_title".into(),
+                                            normalize_content(&node.current_value),
+                                        );
+                                    }
+                                    // Try to capture the actual title of the page as a fallback for later
+                                    if tag_name == "title"
+                                        && !data.meta.contains_key("auto_page_title")
+                                    {
+                                        data.meta.insert(
+                                            "auto_page_title".into(),
+                                            normalize_content(&node.current_value),
+                                        );
+                                    }
+
+                                    let tag_name = end.name();
+                                    if SENTENCE_SELECTORS.contains(&tag_name.as_str()) {
+                                        // For block elements, we want to make sure sentences
+                                        // don't hug each other without whitespace.
+                                        // We normalize repeated whitespace later, so we
+                                        // can add this indiscriminately.
+                                        node.current_value.insert(0, ' ');
+
+                                        // Similarly, we want to separate block elements
+                                        // with punctuation, so that the excerpts read nicely.
+                                        // (As long as it doesn't already end with, say, a . or ?)
+                                        if node
+                                            .current_value
+                                            .chars()
+                                            .last()
+                                            .filter(|c| SENTENCE_CHARS.is_match(&c.to_string()))
+                                            .is_some()
+                                        {
+                                            node.current_value.push('.');
+                                        }
+                                        node.current_value.push(' ');
+                                    }
+
+                                    // Huck all of the content we have onto the end of the
+                                    // content that the parent node has (so far)
+                                    // This will include all of our children's content,
+                                    // and the order of tree traversal will mean that it
+                                    // is inserted in the correct position in the parent's content.
+                                    let mut parent = data.current_node.borrow_mut();
+
+                                    // If the parent is a parent of a body, we don't want to append
+                                    // any more content to it. (Unless, of course, we are representing another body)
+                                    if parent.status == NodeStatus::ParentOfBody
+                                        && node.status != NodeStatus::Body
+                                        && node.status != NodeStatus::ParentOfBody
+                                    {
+                                        return Ok(());
+                                    }
+                                    match node.status {
+                                        NodeStatus::Ignored => {}
+                                        NodeStatus::Indexing => {
+                                            parent.current_value.push_str(&node.current_value);
+                                        }
+                                        NodeStatus::Body | NodeStatus::ParentOfBody => {
+                                            // If our parent is already a parent of a body, then
+                                            // we're probably a subsequent body. Avoid clearing it out.
+                                            if parent.status != NodeStatus::ParentOfBody {
+                                                parent.current_value.clear();
+                                            }
+                                            parent.current_value.push_str(&node.current_value);
+                                            parent.status = NodeStatus::ParentOfBody;
+                                        }
+                                    };
+
+                                    Ok(())
+                                });
+                                handlers.push(handler);
+                            };
+
+                            // Try to handle tags like <img /> which have no end tag,
+                            // and thus will never hit the logic to reset the current node.
+                            // TODO: This could still be missed for tags with implied ends?
+                            if !el.can_have_content() {
+                                let mut data = data.borrow_mut();
+                                let node = node.borrow();
                                 if let Some(parent) = &node.parent {
                                     data.current_node = Rc::clone(parent);
                                 }
 
-                                // Try to capture the first title on the page (if unset)
-                                if tag_name == "h1" && !data.meta.contains_key("auto_title") && !node.current_value.trim().is_empty() {
-                                    data.meta.insert("auto_title".into(), normalize_content(&node.current_value));
-                                }
-                                // Try to capture the actual title of the page as a fallback for later
-                                if tag_name == "title" && !data.meta.contains_key("auto_page_title") {
-                                    data.meta.insert("auto_page_title".into(), normalize_content(&node.current_value));
-                                }
+                                // Try to capture the first image _after_ a title (if unset)
+                                if tag_name == "img"
+                                    && !data.meta.contains_key("auto_image")
+                                    && (data.meta.contains_key("auto_title")
+                                        || data.meta.contains_key("title"))
+                                {
+                                    if let Some(src) = el.get_attribute("src") {
+                                        data.meta.insert("auto_image".into(), src);
 
-                                let tag_name = end.name();
-                                if SENTENCE_SELECTORS.contains(&tag_name.as_str()) {
-                                    // For block elements, we want to make sure sentences
-                                    // don't hug each other without whitespace.
-                                    // We normalize repeated whitespace later, so we
-                                    // can add this indiscriminately.
-                                    node.current_value.insert(0, ' ');
-
-                                    // Similarly, we want to separate block elements
-                                    // with punctuation, so that the excerpts read nicely.
-                                    // (As long as it doesn't already end with, say, a . or ?)
-                                    if node.current_value.chars()
-                                        .last()
-                                        .filter(|c| SENTENCE_CHARS.is_match(&c.to_string()))
-                                        .is_some() {
-                                            node.current_value.push('.');
-                                    }
-                                    node.current_value.push(' ');
-                                }
-
-                                // Huck all of the content we have onto the end of the
-                                // content that the parent node has (so far)
-                                // This will include all of our children's content,
-                                // and the order of tree traversal will mean that it
-                                // is inserted in the correct position in the parent's content.
-                                let mut parent = data.current_node.borrow_mut();
-
-                                // If the parent is a parent of a body, we don't want to append
-                                // any more content to it. (Unless, of course, we are representing another body)
-                                if parent.status == NodeStatus::ParentOfBody
-                                    && node.status != NodeStatus::Body
-                                    && node.status != NodeStatus::ParentOfBody {
-                                        return Ok(());
-                                }
-                                match node.status {
-                                    NodeStatus::Ignored => {},
-                                    NodeStatus::Indexing => {
-                                        parent.current_value.push_str(&node.current_value);
-                                    },
-                                    NodeStatus::Body | NodeStatus::ParentOfBody => {
-                                        // If our parent is already a parent of a body, then
-                                        // we're probably a subsequent body. Avoid clearing it out.
-                                        if parent.status != NodeStatus::ParentOfBody {
-                                            parent.current_value.clear();
+                                        if let Some(alt) = el.get_attribute("alt") {
+                                            data.meta.insert("auto_image_alt".into(), alt);
                                         }
-                                        parent.current_value.push_str(&node.current_value);
-                                        parent.status = NodeStatus::ParentOfBody;
-                                    }
-                                };
-
-                                Ok(())
-                            }))
-                        };
-
-                        // Try to handle tags like <img /> which have no end tag,
-                        // and thus will never hit the logic to reset the current node.
-                        // TODO: This could still be missed for tags with implied ends?
-                        if !el.can_have_content(){
-                            let mut data = data.borrow_mut();
-                            let node = node.borrow();
-                            if let Some(parent) = &node.parent {
-                                data.current_node = Rc::clone(parent);
-                            }
-
-
-                            // Try to capture the first image _after_ a title (if unset)
-                            if tag_name == "img"
-                                && !data.meta.contains_key("auto_image")
-                                && (data.meta.contains_key("auto_title") || data.meta.contains_key("title")) {
-                                if let Some(src) = el.get_attribute("src") {
-                                data.meta.insert("auto_image".into(), src);
-
-                                    if let Some(alt) = el.get_attribute("alt") {
-                                        data.meta.insert("auto_image_alt".into(), alt);
                                     }
                                 }
                             }
-                        }
-                        Ok(())
-                    })},
+                            Ok(())
+                        })
+                    },
                     // If we hit a selector that should be excluded, mark whatever the current node is as such
-                    enclose! { (data) element!(exclusions, move |_el| {
-                        let data = data.borrow_mut();
-                        let mut node = data.current_node.borrow_mut();
-                        node.status = NodeStatus::Ignored;
-                        Ok(())
-                    })},
+                    {
+                        let data = data.clone();
+                        element!(exclusions, move |_el| {
+                            let data = data.borrow_mut();
+                            let mut node = data.current_node.borrow_mut();
+                            node.status = NodeStatus::Ignored;
+                            Ok(())
+                        })
+                    },
                     // Slap any text we encounter inside the body into the current node's current value
-                    enclose! { (data) text!(root_selector, move |el| {
-                        let data = data.borrow_mut();
-                        let mut node = data.current_node.borrow_mut();
-                        let element_text = el.as_str();
-                        node.current_value.push_str(element_text);
-                        Ok(())
-                    })},
+                    {
+                        let data = data.clone();
+                        text!(root_selector, move |el| {
+                            let data = data.borrow_mut();
+                            let mut node = data.current_node.borrow_mut();
+                            let element_text = el.as_str();
+                            node.current_value.push_str(element_text);
+                            Ok(())
+                        })
+                    },
                 ],
                 strict: false,
                 ..Settings::default()
