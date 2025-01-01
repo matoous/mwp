@@ -12,14 +12,10 @@ enum Xtask {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    pretty_env_logger::init();
     let xtask = Xtask::parse();
 
     match xtask {
-        Xtask::Scrape => scrape().await,
+        Xtask::Scrape => mwp_scraper::scrape_all().await,
     }
-}
-
-async fn scrape() -> Result<(), Box<dyn std::error::Error>> {
-    mwp_scraper::scrape_all().await?;
-    Ok(())
 }
