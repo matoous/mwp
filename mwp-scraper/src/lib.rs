@@ -4,6 +4,9 @@ use rusqlite::Connection;
 use time::OffsetDateTime;
 use url::Url;
 
+#[macro_use]
+extern crate log;
+
 mod parser;
 
 use crate::parser::{DomParser, DomParserResult};
@@ -20,6 +23,8 @@ pub async fn scrape(link: &Url) -> Result<DomParserResult, Box<dyn std::error::E
 }
 
 pub async fn scrape_all() -> Result<(), Box<dyn std::error::Error>> {
+    info!("scraping all links");
+
     let conn = Connection::open("./db.db3")?;
     conn.execute(
         r#"
@@ -38,12 +43,13 @@ pub async fn scrape_all() -> Result<(), Box<dyn std::error::Error>> {
 
     let content = mwp_content::Content::from_dir("../wiki").await;
 
-    // only needed before links from content are migrated to bookmarking system
     let links = content
         .all()
         .values()
         .flat_map(|p| p.links.clone())
         .collect::<Vec<Link>>();
+
+    info!("collected {} links", links.len());
 
     let mut stmt = conn.prepare("SELECT * FROM links WHERE url = ?1")?;
     for Link {
@@ -62,6 +68,8 @@ pub async fn scrape_all() -> Result<(), Box<dyn std::error::Error>> {
         //         continue;
         //     }
         // };
+
+        info!("inserting new link {}", url);
 
         // println!("Link {} to {}", link.title, link.url);
         let mut doc = Doc::new(
@@ -86,35 +94,34 @@ pub async fn scrape_all() -> Result<(), Box<dyn std::error::Error>> {
         )?;
     }
 
-    loop {
-        let link =  match conn.query_row(
-            "SELECT title, url, domain, body, tags, created_at, scraped_at FROM links WHERE body IS NULL AND scraped_at IS NULL LIMIT 1",
-            [],
-            |row| Ok(Doc {
-                 title: row.get(0)?,
-                 url: row.get(1)?,
-                 domain: row.get(2)?,
-                 body: row.get(3)?,
-                 tags: row.get::<usize, Option<String>>(4).map(|res| res.map(|s| s.split(';').map(|s| s.into()).collect::<Vec<String>>()))?,
-                 created_at: row.get(5)?,
-                 scraped_at: row.get(6)?,
-            }),
-        ) {
-            Ok(link) => link,
-            Err(e) => {
-                println!("query link: {:?}", e);
-                break;
-            },
-        };
+    let docs = conn.prepare(
+        "SELECT title, url, domain, body, tags, created_at, scraped_at FROM links WHERE body IS NULL AND scraped_at IS NULL",
+    )?.query_map(
+        [],
+        |row| Ok(Doc {
+             title: row.get(0)?,
+             url: row.get(1)?,
+             domain: row.get(2)?,
+             body: row.get(3)?,
+             tags: row.get::<usize, Option<String>>(4).map(|res| res.map(|s| s.split(';').map(|s| s.into()).collect::<Vec<String>>()))?,
+             created_at: row.get(5)?,
+             scraped_at: row.get(6)?,
+        }),
+    )?.collect::<Result<Vec<_>, _>>()?;
 
-        let data = scrape(&link.url).await;
+    info!("will scrape {} documents", docs.len());
+
+    for doc in docs {
+        info!("scraping link {}, tags {:?}", doc.url, doc.tags);
+
+        let data = scrape(&doc.url).await;
         let data = match data {
             Ok(data) => data,
             Err(err) => {
-                println!("Scrape {}: {}", link.url, err);
+                error!("scrape {}: {}", doc.url, err);
                 conn.execute(
                     "UPDATE links SET scraped_at = datetime('now') WHERE url = ?1",
-                    rusqlite::params![link.url],
+                    rusqlite::params![doc.url],
                 )?;
                 continue;
             }
@@ -122,7 +129,7 @@ pub async fn scrape_all() -> Result<(), Box<dyn std::error::Error>> {
 
         conn.execute(
             "UPDATE links SET body = ?1, scraped_at = datetime('now') WHERE url = ?2",
-            rusqlite::params![data.digest, link.url],
+            rusqlite::params![data.digest, doc.url],
         )?;
     }
 

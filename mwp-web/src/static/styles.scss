@@ -141,13 +141,13 @@ form {
 
 .layout {
   display: grid;
-  grid-template-columns: 16em minmax(0, 1fr);
+  grid-template-columns: 16em minmax(0, 1fr) 16em;
   grid-template-rows: auto auto 1fr auto;
   grid-template-areas:
-    'nav nav'
-    'sidebar meta'
-    'sidebar content'
-    'footer footer';
+    'nav nav nav'
+    'sidebar meta blank'
+    'sidebar content blank'
+    'footer footer footer';
 
   @media (width <=1000px) {
     grid-template-columns: auto;
@@ -168,7 +168,6 @@ form {
   justify-content: space-between;
   align-items: center;
   padding: var(--spacings-kilo) var(--spacings-giga);
-  border-bottom: 2px solid var(--light);
 
   .burger {
     display: none;
@@ -237,7 +236,6 @@ footer {
 }
 
 article {
-  max-width: 920px;
   width: 100%;
 
   img {

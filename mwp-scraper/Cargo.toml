@@ -17,6 +17,7 @@ rusqlite = { workspace = true }
 tantivy = { workspace = true }
 url = { workspace = true }
 time = { workspace = true }
+log = { workspace = true }
 
 mwp-content = { path="../mwp-content" }
 mwp-search = { path="../mwp-search" }

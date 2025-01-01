@@ -6,6 +6,7 @@ pub struct SearchIndex {
     pub index: Index,
 }
 
+#[derive(Clone)]
 pub struct Doc {
     pub title: String,
     pub url: Url,
