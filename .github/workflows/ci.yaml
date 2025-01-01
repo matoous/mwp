@@ -8,8 +8,6 @@ on:
     types: [deploy]
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
   RUST_BACKTRACE: 1
   CARGO_INCREMENTAL: 0 # makes cache smaller
   CARGO_PROFILE_DEV_DEBUG: 0  
