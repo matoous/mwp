@@ -1,5 +1,5 @@
 use maud::{html, Markup, PreEscaped};
-use tantivy::aggregation::agg_result::BucketEntry;
+use tantivy::{aggregation::agg_result::BucketEntry, Snippet};
 
 const EXPAND_ICON: &str = include_str!("static/expand.svg");
 const BURGER_ICON: &str = include_str!("static/burger.svg");
@@ -130,7 +130,7 @@ pub fn content_navigation(children: Vec<mwp_content::Node>, hiearchy: Vec<String
     }
 }
 
-pub fn link(title: &str, url: &str, tags: Vec<&str>) -> Markup {
+pub fn link(title: &str, url: &str, tags: Vec<&str>, snippet: Option<Snippet>) -> Markup {
     html! {
         div .link {
             div .title {
@@ -144,6 +144,11 @@ pub fn link(title: &str, url: &str, tags: Vec<&str>) -> Markup {
             div .url {
                 a href=(url) {
                     (url)
+                }
+            }
+            @if let Some(snippet) = snippet {
+                div .snippet {
+                    (PreEscaped(snippet.to_html()))
                 }
             }
             (tags_list(tags))
