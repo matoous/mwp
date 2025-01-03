@@ -37,7 +37,7 @@ impl SearchIndex {
         let mut schema_builder = Schema::builder();
         schema_builder.add_text_field("url", STRING | STORED);
         schema_builder.add_text_field("title", TEXT | STORED);
-        schema_builder.add_text_field("body", TEXT);
+        schema_builder.add_text_field("body", TEXT | STORED);
         schema_builder.add_text_field("domain", STRING | STORED);
         schema_builder.add_text_field("tags", STRING | STORED | FAST);
         let schema = schema_builder.build();

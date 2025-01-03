@@ -14,7 +14,7 @@ use serde::Deserialize;
 use tantivy::{
     query::QueryParser,
     schema::{Schema, Value},
-    DocAddress, Index, Searcher, TantivyDocument,
+    DocAddress, Index, Searcher, SnippetGenerator, TantivyDocument,
 };
 
 mod render;
@@ -22,7 +22,12 @@ mod search;
 
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
-fn listing(searcher: Searcher, schema: Schema, docs: Vec<(f32, DocAddress)>) -> Markup {
+fn listing(
+    searcher: Searcher,
+    schema: Schema,
+    docs: Vec<(f32, DocAddress)>,
+    snippetgen: Option<SnippetGenerator>,
+) -> Markup {
     let title = schema.get_field("title").unwrap();
     let tags = schema.get_field("tags").unwrap();
     let url = schema.get_field("url").unwrap();
@@ -34,7 +39,11 @@ fn listing(searcher: Searcher, schema: Schema, docs: Vec<(f32, DocAddress)>) -> 
                 @let title = doc.get_first(title).unwrap().as_str().unwrap();
                 @let url = doc.get_first(url).unwrap().as_str().unwrap();
                 @let tags = doc.get_all(tags).map(|i| i.as_str().unwrap()).collect::<Vec<&str>>();
-                (render::link(title, url, tags))
+                @let snippet = match &snippetgen {
+                    Some(gen) => Some(gen.snippet_from_doc(&doc)),
+                    None => None,
+                };
+                (render::link(title, url, tags, snippet))
             }
         }
     }
@@ -59,6 +68,8 @@ async fn search_page(q: web::Query<SearchQuery>, index: web::Data<Index>) -> AwR
     let query = query_parser.parse_query(q.query.as_str()).unwrap();
     let result = search::search(index.into_inner(), &*query, q.page.unwrap_or(0)).unwrap();
 
+    let snippet_generator = SnippetGenerator::create(&searcher, &*query, body).unwrap();
+
     Ok(html! {
         (DOCTYPE)
         html {
@@ -76,7 +87,7 @@ async fn search_page(q: web::Query<SearchQuery>, index: web::Data<Index>) -> AwR
                         }
                     },
                     html! {
-                        (listing(searcher, schema, result.docs))
+                        (listing(searcher, schema, result.docs, Some(snippet_generator)))
                     }
                 ))
             }
@@ -112,7 +123,7 @@ async fn tag_page(tag: web::Path<String>, index: web::Data<Index>) -> AwResult<M
                             div {(format!("{} results in {:.2?}", result.count, result.timing))}
                         }
                     },
-                    listing(searcher, schema, result.docs)
+                    listing(searcher, schema, result.docs,None)
                 ))
             }
         }
