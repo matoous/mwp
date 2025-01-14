@@ -32,5 +32,5 @@ tantivy = { version = "0.22.0", features = ["mmap"] }
 url = { version = "2.5.4", features = ["serde"] }
 time = "0.3.37"
 rusqlite = { version = "0.32.1", features = ["time", "url", "bundled"]}
-log = "0.4.22"
+log = "0.4.25"
 tokio = { version = "1.43.0", features= ["full"]}
