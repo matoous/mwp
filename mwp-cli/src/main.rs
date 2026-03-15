@@ -10,21 +10,21 @@ use std::{
 
 use actix_files::Files;
 use actix_web::{App, HttpServer};
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{Context, Result, anyhow, bail};
 use camino::{Utf8Path, Utf8PathBuf};
 use clap::{Args, Parser, Subcommand, ValueHint};
-use futures::{stream, StreamExt};
+use futures::{StreamExt, stream};
 use grass::OutputStyle;
 use html_escape::encode_safe;
 use indicatif::{ProgressBar, ProgressStyle};
-use maud::{html, PreEscaped, DOCTYPE};
+use maud::{DOCTYPE, PreEscaped, html};
 use mwp_content::{Content, Node, Page};
 use pagefind::api::PagefindIndex;
 use pagefind::options::PagefindServiceConfig;
 use pulldown_cmark::{Event, Options, Parser as MarkdownParser, Tag, TagEnd};
 use reqwest::{
-    header::{HeaderValue, ETAG, IF_MODIFIED_SINCE, IF_NONE_MATCH, LAST_MODIFIED},
     Client, StatusCode,
+    header::{ETAG, HeaderValue, IF_MODIFIED_SINCE, IF_NONE_MATCH, LAST_MODIFIED},
 };
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};

@@ -5,7 +5,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use pulldown_cmark::{html, Event, HeadingLevel, Options, Parser, Tag, TagEnd};
+use pulldown_cmark::{Event, HeadingLevel, Options, Parser, Tag, TagEnd, html};
 use url::Url;
 use walkdir::WalkDir;
 

@@ -1,4 +1,4 @@
-use maud::{html, Markup, PreEscaped};
+use maud::{Markup, PreEscaped, html};
 use mwp_content::Node;
 
 const EXPAND_ICON: &str = include_str!("static/expand.svg");
