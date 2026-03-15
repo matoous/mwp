@@ -23,7 +23,6 @@ html-escape.workspace = true
 indicatif.workspace = true
 maud.workspace = true
 mwp-content = { path = "../mwp-content" }
-mwp-scraper = { path = "../mwp-scraper" }
 pagefind.workspace = true
 pulldown-cmark.workspace = true
 reqwest.workspace = true

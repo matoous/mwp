@@ -69,8 +69,6 @@ enum CommandKind {
     Index(IndexArgs),
     /// Serve a built static site locally
     Serve(ServeArgs),
-    /// Scrape latest content for full-text search
-    Scrape,
 }
 
 #[derive(Args, Debug)]
@@ -193,9 +191,6 @@ async fn main() -> Result<()> {
         CommandKind::Build(args) => run_build(args).await?,
         CommandKind::Index(args) => run_index(args).await?,
         CommandKind::Serve(args) => run_serve(args).await?,
-        CommandKind::Scrape => mwp_scraper::scrape_all()
-            .await
-            .map_err(|err| anyhow!(err.to_string()))?,
     }
 
     Ok(())

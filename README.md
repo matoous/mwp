@@ -1,12 +1,12 @@
-# Matt's Wiki Project
+# Mat's Wiki Project
 
-MWP (Matt's Wiki Project) is a static site generator for a personal markdown wiki.
+MWP (Mat's Wiki Project) is a static site generator for my personal wiki.
 
-It renders the markdown tree into ready-to-serve HTML and builds a Pagefind search bundle from linked pages, so the final site can be hosted as plain static files.
+It renders a markdown tree into ready-to-serve HTML and builds a Pagefind search bundle from linked pages, so the final site can be hosted as plain static files.
 
 ## Development
 
-`../mwp` is now a normal CLI. Run it with Cargo:
+Run:
 
 ```sh
 cargo run -p mwp -- --help
@@ -20,13 +20,14 @@ cargo install --path mwp-cli
 
 Then use `mwp ...` directly.
 
-### Build the static site
+### Build the Static Site
 
 ```sh
 cargo run -p mwp -- build --root /path/to/wiki --output dist
 ```
 
 The `build` command renders the wiki into `dist/`, writes shared assets, and generates the `dist/pagefind/` bundle in one run.
+
 Remote pages are cached in `.mwp-cache/` by default, revalidated after 168 hours, and reused automatically on repeated builds.
 
 Useful flags:
@@ -37,7 +38,7 @@ Useful flags:
 --offline
 ```
 
-### Build only the Pagefind search bundle
+### Build Only the Pagefind Search Bundle
 
 ```sh
 cargo run -p mwp -- index --root /path/to/wiki --output dist/pagefind
@@ -49,15 +50,16 @@ Example with cache controls:
 cargo run -p mwp -- index --root /path/to/wiki --output dist/pagefind --cache-dir .mwp-cache --cache-ttl-hours 24
 ```
 
-### Serve the built site locally
+### Serve the Built Site Locally
 
 ```sh
 cargo run -p mwp -- serve --dir dist --addr 127.0.0.1:4444
 ```
 
-### Build and preview the wiki in `../wiki`
+### Build and Preview the Wiki
 
-From inside `../mwp`:
+(assuming your have a clone of my wiki or your own in under `wiki/` in the parent folder)
+Run:
 
 ```sh
 cargo run -p mwp -- build --root ../wiki --output dist
