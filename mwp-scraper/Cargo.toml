@@ -5,6 +5,8 @@ version.workspace = true
 edition.workspace = true
 categories.workspace = true
 repository.workspace = true
+description = "Legacy remote page scraper for populating mwp search data from wiki links."
+readme = "README.md"
 
 [dependencies]
 html-escape = "0.2.13"

@@ -5,6 +5,8 @@ version.workspace = true
 edition.workspace = true
 categories.workspace = true
 repository.workspace = true
+description = "Markdown content loader and renderer used by the mwp wiki toolchain."
+readme = "README.md"
 
 [dependencies]
 pulldown-cmark = "0.12.2"
